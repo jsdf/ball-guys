@@ -7,6 +7,8 @@
 
 #define MAX_DRAW_OBJS 10
 
+T3DVec3 defaultScale = {{0.2f, 0.2f, 0.2f}};
+
 jsdf_array_funcs(T3DMat4FP, malloc_uncached, free_uncached);
 jsdf_array_funcs(DrawObj, malloc, free);
 
@@ -61,20 +63,10 @@ void DrawObj_draw(int index)
 
 void DrawObj_drawAll()
 {
-#ifdef OPTIMIZE
-    // unchecked version
-    DrawObj *drawObj = drawObjs.data;
-    for (size_t i = 0; i < drawObjs.length; i++)
-    {
-        rspq_block_run(drawObj->drawBlock);
-        drawObj++;
-    }
-#else
     for (size_t i = 0; i < drawObjs.length; i++)
     {
         DrawObj_draw(i);
     }
-#endif
 }
 
 // clean up all the draw objects
@@ -88,7 +80,7 @@ void DrawObj_cleanup()
     }
     DrawObjArray_free(&drawObjs);
 
-    // free the transforms
+    // free the transforms used by the draw objects
     T3DMat4FPArray_free(&objTransforms);
 }
 
@@ -109,30 +101,16 @@ void DrawObj_updateTransform(
     T3DMat4FP *transform = T3DMat4FPArray_at(&objTransforms, index);
     t3d_mat4fp_from_srt_euler(
         transform,
-        (float[3]){0.2f, 0.2f, 0.2f}, // scale
-        drawObj->rotation.v,          // rotation
-        drawObj->position.v           // translation
+        defaultScale.v,      // scale
+        drawObj->rotation.v, // rotation
+        drawObj->position.v  // translation
     );
 }
 
 void DrawObj_updateTransforms()
 {
-
     for (size_t i = 0; i < drawObjs.length; i++)
     {
         DrawObj_updateTransform(i);
     }
-
-    // T3DMat4FP *transform;
-    // size_t i;
-    // DrawObj *drawObj;
-    // jsdf_array_foreach_ptr(&objTransforms, transform, i)
-    // {
-    //     // update object transforms
-    //     drawObj = DrawObjArray_at(&drawObjs, i);
-    //     t3d_mat4fp_from_srt_euler(transform,
-    //                               (float[3]){0.125f, 0.125f, 0.125f},
-    //                               (float[3]){0.0f, 0, 0},
-    //                               &drawObj->position.v[0]);
-    // }
 }
