@@ -1,13 +1,11 @@
 #ifndef DRAWOBJ_H
 #define DRAWOBJ_H
 
-#include <libdragon.h>
-
-#include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
-#include <t3d/t3dmodel.h>
 
-#include "./jsdf_array.h"
+#include "jsdf_array.h"
+
+// component system for drawable objects
 
 typedef struct DrawObj
 {
@@ -21,15 +19,15 @@ jsdf_array(T3DMat4FP);
 jsdf_array(DrawObj);
 
 void DrawObj_init();
-void DrawObj_new(
-    int index,
+DrawObj *DrawObj_new(
     T3DModel *model);
 void DrawObj_draw(int index);
 void DrawObj_drawAll();
 void DrawObj_cleanup();
 
 T3DMat4FPArray *DrawObj_getTransforms();
-DrawObjArray *DrawObj_get();
+DrawObjArray *DrawObj_getAll();
+DrawObj *DrawObj_get(int index);
 
 void DrawObj_updateTransform(int index);
 void DrawObj_updateTransforms();

@@ -34,7 +34,11 @@ void minigame_fixedloop(float deltaTime)
 
 void minigame_loop(float deltaTime)
 {
-  Renderer_update();
+  Game *game =
+      Game_getInstance();
+  Renderer_update(
+      &game->camPos,
+      &game->camTarget);
   // ======== Draw (3D) ======== //
   Renderer_draw();
 }

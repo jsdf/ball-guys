@@ -1,5 +1,12 @@
 #ifndef JSDF_ARRAY_H
 #define JSDF_ARRAY_H
+#include <stddef.h>
+
+// #define DEBUG 1
+
+#ifdef DEBUG
+#include "debug.h"
+#endif
 
 #define jsdf_array_func_prototypes(type)                           \
     void type##Array_reserve(type##Array *array, size_t capacity); \
@@ -75,7 +82,7 @@
 // with bounds checking in DEBUG mode
 #ifdef DEBUG
 #define jsdf_array_push_uninit_macro(type)                                               \
-    *type##type##Array_push_uninit(type##Array *array)                                   \
+    type *type##Array_push_uninit(type##Array *array)                                    \
     {                                                                                    \
         assertf(array != NULL, #type "Array: array is NULL");                            \
         assertf(array->length < array->capacity, #type "Array: failed to push element"); \

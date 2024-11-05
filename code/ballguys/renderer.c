@@ -10,8 +10,6 @@
 surface_t *depthBuffer;
 T3DViewport viewport;
 
-T3DVec3 camPos;
-T3DVec3 camTarget;
 T3DVec3 lightDirVec;
 
 rspq_syncpoint_t syncPoint;
@@ -26,20 +24,19 @@ void Renderer_init()
 
     viewport = t3d_viewport_create();
 
-    camPos = (T3DVec3){{0, 125.0f, 100.0f}};
-    camTarget = (T3DVec3){{0, 0, 40}};
-
     lightDirVec = (T3DVec3){{1.0f, 1.0f, 1.0f}};
     t3d_vec3_norm(&lightDirVec);
 
     syncPoint = 0;
 }
 
-void Renderer_update()
+void Renderer_update(
+    T3DVec3 *camPos,
+    T3DVec3 *camTarget)
 {
     // update before drawing
-    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 160.0f);
-    t3d_viewport_look_at(&viewport, &camPos, &camTarget, &(T3DVec3){{0, 1, 0}});
+    t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(90.0f), 20.0f, 1000.0f);
+    t3d_viewport_look_at(&viewport, camPos, camTarget, &(T3DVec3){{0, 1, 0}});
 
     // update transforms used by renderer based on drawobj structs
     DrawObj_updateTransforms();

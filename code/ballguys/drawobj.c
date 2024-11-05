@@ -7,20 +7,13 @@
 
 #define MAX_DRAW_OBJS 10
 
-T3DVec3 defaultScale = {{0.2f, 0.2f, 0.2f}};
+T3DVec3 defaultScale = {{1.0f, 1.0f, 1.0f}};
 
 jsdf_array_funcs(T3DMat4FP, malloc_uncached, free_uncached);
 jsdf_array_funcs(DrawObj, malloc, free);
 
 T3DMat4FPArray objTransforms;
 DrawObjArray drawObjs;
-
-void T3DVec3_set(T3DVec3 *v, float x, float y, float z)
-{
-    v->v[0] = x;
-    v->v[1] = y;
-    v->v[2] = z;
-}
 
 // initialize the draw object system
 void DrawObj_init()
@@ -31,8 +24,7 @@ void DrawObj_init()
 
 // set up an object with everything we can statically define
 // so we can just draw it later
-void DrawObj_new(
-    int index,
+DrawObj *DrawObj_new(
     T3DModel *model)
 {
     int id = objTransforms.length;
@@ -51,7 +43,9 @@ void DrawObj_new(
     drawObj->rotation = (T3DVec3){{0, 0, 0}};
 
     drawObj->drawBlock = drawModelBlock;
-    DrawObj_updateTransform(index);
+    DrawObj_updateTransform(id);
+
+    return drawObj;
 }
 
 // draw a single object by index
@@ -89,9 +83,13 @@ T3DMat4FPArray *DrawObj_getTransforms()
     return &objTransforms;
 }
 
-DrawObjArray *DrawObj_get()
+inline DrawObjArray *DrawObj_getAll()
 {
     return &drawObjs;
+}
+inline DrawObj *DrawObj_get(int index)
+{
+    return DrawObjArray_at(&drawObjs, index);
 }
 
 void DrawObj_updateTransform(
@@ -99,11 +97,14 @@ void DrawObj_updateTransform(
 {
     DrawObj *drawObj = DrawObjArray_at(&drawObjs, index);
     T3DMat4FP *transform = T3DMat4FPArray_at(&objTransforms, index);
+    // T3DVec3 pos = {{0, 0, 0}};
+    T3DVec3 *pos = &drawObj->position;
+    T3DVec3 *rot = &drawObj->rotation;
     t3d_mat4fp_from_srt_euler(
         transform,
-        defaultScale.v,      // scale
-        drawObj->rotation.v, // rotation
-        drawObj->position.v  // translation
+        defaultScale.v, // scale
+        &rot->v[0],     // rotation
+        &pos->v[0]      // translation
     );
 }
 

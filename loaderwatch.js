@@ -1,24 +1,35 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const {spawn} = require('child_process');
+const { spawn } = require('child_process');
 
 const filePath = path.join(__dirname, 'gamejam2024.z64');
 
+let loaderProcess = null;
+
 function onChange() {
-  console.log(`Uploading ${filePath}...`);
-  // Run the command with the changed file path
-  const command = 'unfloader';
-  const args = ['-r', filePath, '-t', '5', '-b'];
+  if (loaderProcess) {
+    console.log('File changed again. Killing previous process...');
+    loaderProcess.kill();
+  }
 
-  const process = spawn(command, args, {stdio: 'inherit'});
+  console.log(`Starting unfloader process for ${filePath}`);
 
-  process.on('close', (code) => {
-    console.log(`Command finished with exit code ${code}`);
+  loaderProcess = spawn('unfloader', [
+    filePath,
+    '-d', // debugf() messages 
+    '-b'// disable ncurses interface
+  ], { stdio: 'inherit' });
+
+  loaderProcess.on('close', (code) => {
+    if (code !== null) {
+      console.log(`unfloader process exited with code ${code}`);
+      loaderProcess = null;
+    }
   });
 }
 
-fs.watchFile(filePath, {interval: 500}, (curr, prev) => {
+fs.watchFile(filePath, { interval: 500 }, (curr, prev) => {
   if (
     curr.mtimeMs !== prev.mtimeMs && // changed
     curr.ctimeMs !== 0 // not deleted
