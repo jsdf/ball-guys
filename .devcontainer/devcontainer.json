@@ -2,5 +2,6 @@
     // Use image instead of build, if you don't need the cli installed
     "image": "ghcr.io/dragonminded/libdragon:latest",
     "workspaceMount": "source=${localWorkspaceFolder},target=/libdragon,type=bind",
-    "workspaceFolder": "/libdragon"
+    "workspaceFolder": "/libdragon",
+    "postCreateCommand": ".devcontainer/init.sh"
 }

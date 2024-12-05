@@ -5,6 +5,8 @@
 #include "physics.h"
 #include "physobj.h"
 #include "vec3d.h"
+#include "../../minigame.h"
+#include "../../core.h"
 
 T3DModel *modelBox;
 T3DModel *modelBall;
@@ -16,6 +18,18 @@ PhysWorldData worldData = {
 };
 PhysState physics;
 Game game;
+
+typedef struct
+{
+    PlyNum plynum;
+    bool charging;
+    int chargePower;
+
+} Player;
+
+Player players[MAXPLAYERS];
+
+PlyNum winner;
 
 #define MOVE_SPEED 0.1f
 
@@ -82,39 +96,74 @@ void Game_updatePhysObjs(
         Game_copyT3DVec3FromVec3d(&drawObj->position, &physBody->position);
     }
 }
-
-void Game_fixedUpdate(
-    float deltaTime // in seconds
-)
+void Game_updatePlayer(Player *player, float deltaTime, joypad_port_t port, bool is_human)
 {
-    Game_updatePhysObjs(deltaTime);
-
-    size_t numDrawObjs = DrawObj_getAll()->length;
-    DrawObj *drawObj;
-    for (size_t i = 0; i < numDrawObjs; i++)
+    if (is_human && player_has_control(player))
     {
-        drawObj = DrawObj_get(i);
-        debugf("drawObj %d pos %f %f %f\n", drawObj->id, drawObj->position.v[0], drawObj->position.v[1], drawObj->position.v[2]);
+        joypad_buttons_t btn = joypad_get_buttons_pressed(port);
 
-        // rotate
-        if (drawObj->id == 0 || drawObj->id == 1)
+        if (btn.start)
+            minigame_end();
+
+        // Player Attack
+        if ((btn.a || btn.b) && !player->charging)
         {
-            //
-            drawObj->rotation.v[0] += 0.1f;
+            player->charging = true;
+            player->chargePower = 0;
+        }
+        if (player->charging)
+        {
+            player->chargePower += 1;
+            if (player->chargePower > 100)
+            {
+                player->chargePower = 100;
+            }
+        }
+
+        if (!(btn.a || btn.b))
+        {
+            // launch
         }
     }
-}
+    void Game_fixedUpdate(
+        float deltaTime // in seconds
+    )
+    {
 
-void Game_cleanup()
-{
+        uint32_t playercount = core_get_playercount();
+        for (size_t i = 0; i < MAXPLAYERS; i++)
+        {
+            Game_updatePlayer(&players[i], deltaTime, core_get_playercontroller(i), i < playercount);
+        }
 
-    DrawObj_cleanup();
-    PhysObj_cleanupSystem();
+        Game_updatePhysObjs(deltaTime);
 
-    t3d_model_free(modelBox);
-}
+        size_t numDrawObjs = DrawObj_getAll()->length;
+        DrawObj *drawObj;
+        for (size_t i = 0; i < numDrawObjs; i++)
+        {
+            drawObj = DrawObj_get(i);
+            debugf("drawObj %d pos %f %f %f\n", drawObj->id, drawObj->position.v[0], drawObj->position.v[1], drawObj->position.v[2]);
 
-Game *Game_getInstance()
-{
-    return &game;
-}
+            // rotate
+            if (drawObj->id == 0 || drawObj->id == 1)
+            {
+                //
+                drawObj->rotation.v[0] += 0.1f;
+            }
+        }
+    }
+
+    void Game_cleanup()
+    {
+
+        DrawObj_cleanup();
+        PhysObj_cleanupSystem();
+
+        t3d_model_free(modelBox);
+    }
+
+    Game *Game_getInstance()
+    {
+        return &game;
+    }

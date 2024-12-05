@@ -2,7 +2,7 @@
 build/
 filesystem/
 *.z64
-.vscode/
+
 node_modules/
 
 # Blender backup files
