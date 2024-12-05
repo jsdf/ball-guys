@@ -19,19 +19,26 @@ PhysWorldData worldData = {
 PhysState physics;
 Game game;
 
-typedef struct
+typedef struct Player
 {
     PlyNum plynum;
+    int objID;
     bool charging;
     int chargePower;
 
 } Player;
 
+Player_init(Player *player, PlyNum plynum, uint32_t objID)
+{
+    player->plynum = plynum;
+    player->objID = objID;
+    player->charging = false;
+    player->chargePower = 0;
+}
+
 Player players[MAXPLAYERS];
 
 PlyNum winner;
-
-#define MOVE_SPEED 0.1f
 
 inline void Game_copyT3DVec3FromVec3d(T3DVec3 *t3dVec, Vec3d *vec)
 {
@@ -125,45 +132,47 @@ void Game_updatePlayer(Player *player, float deltaTime, joypad_port_t port, bool
             // launch
         }
     }
-    void Game_fixedUpdate(
-        float deltaTime // in seconds
-    )
-    {
+}
 
-        uint32_t playercount = core_get_playercount();
-        for (size_t i = 0; i < MAXPLAYERS; i++)
+void Game_fixedUpdate(
+    float deltaTime // in seconds
+)
+{
+
+    uint32_t playercount = core_get_playercount();
+    for (size_t i = 0; i < MAXPLAYERS; i++)
+    {
+        Game_updatePlayer(&players[i], deltaTime, core_get_playercontroller(i), i < playercount);
+    }
+
+    Game_updatePhysObjs(deltaTime);
+
+    size_t numDrawObjs = DrawObj_getAll()->length;
+    DrawObj *drawObj;
+    for (size_t i = 0; i < numDrawObjs; i++)
+    {
+        drawObj = DrawObj_get(i);
+        debugf("drawObj %d pos %f %f %f\n", drawObj->id, drawObj->position.v[0], drawObj->position.v[1], drawObj->position.v[2]);
+
+        // rotate
+        if (drawObj->id == 0 || drawObj->id == 1)
         {
-            Game_updatePlayer(&players[i], deltaTime, core_get_playercontroller(i), i < playercount);
-        }
-
-        Game_updatePhysObjs(deltaTime);
-
-        size_t numDrawObjs = DrawObj_getAll()->length;
-        DrawObj *drawObj;
-        for (size_t i = 0; i < numDrawObjs; i++)
-        {
-            drawObj = DrawObj_get(i);
-            debugf("drawObj %d pos %f %f %f\n", drawObj->id, drawObj->position.v[0], drawObj->position.v[1], drawObj->position.v[2]);
-
-            // rotate
-            if (drawObj->id == 0 || drawObj->id == 1)
-            {
-                //
-                drawObj->rotation.v[0] += 0.1f;
-            }
+            //
+            drawObj->rotation.v[0] += 0.1f;
         }
     }
+}
 
-    void Game_cleanup()
-    {
+void Game_cleanup()
+{
 
-        DrawObj_cleanup();
-        PhysObj_cleanupSystem();
+    DrawObj_cleanup();
+    PhysObj_cleanupSystem();
 
-        t3d_model_free(modelBox);
-    }
+    t3d_model_free(modelBox);
+}
 
-    Game *Game_getInstance()
-    {
-        return &game;
-    }
+Game *Game_getInstance()
+{
+    return &game;
+}

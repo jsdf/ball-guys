@@ -5,6 +5,8 @@ filesystem/
 
 node_modules/
 
+.vscode/settings.json
+
 # Blender backup files
 *.blend[0-9]
 

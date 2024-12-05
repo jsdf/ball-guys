@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "*.makefile": "makefile",
-        "game.h": "c",
-        "libdragon.h": "c"
-    }
-}
