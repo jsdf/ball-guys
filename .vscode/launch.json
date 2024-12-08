@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "type": "by-gdb",
+            "request": "launch",
+            "name": "Ares debug",
+            "program": "${workspaceFolder}/build/gamejam2024.elf",
+            "cwd": "${workspaceRoot}/",
+            "debuggerPath": "gdb-multiarch",
+            "remote": {
+                "enabled": true,
+                "address": ":9123",
+                "mode": "remote",
+                "execfile": "${workspaceFolder}/build/gamejam2024.elf"
+            },
+        }
+    ]
+}
