@@ -4,6 +4,7 @@
 #include "game.h"
 #include "physics.h"
 #include "physobj.h"
+#include "player.h"
 #include "vec3d.h"
 #include "../../minigame.h"
 #include "../../core.h"
@@ -19,33 +20,15 @@ PhysWorldData worldData = {
 PhysState physics;
 Game game;
 
-typedef struct Player
-{
-    PlyNum plynum;
-    int objID;
-    bool charging;
-    int chargePower;
-
-} Player;
-
-Player_init(Player *player, PlyNum plynum, uint32_t objID)
-{
-    player->plynum = plynum;
-    player->objID = objID;
-    player->charging = false;
-    player->chargePower = 0;
-}
-
 Player players[MAXPLAYERS];
 
 PlyNum winner;
 
-inline void Game_copyT3DVec3FromVec3d(T3DVec3 *t3dVec, Vec3d *vec)
-{
-    t3dVec->v[0] = vec->x;
-    t3dVec->v[1] = vec->y;
-    t3dVec->v[2] = vec->z;
-}
+#define MOVE_SPEED 10.0f
+#define T3DVec3ApplyVec3d(t3dVec, vec, op) \
+    t3dVec.v[0] op vec.x;                  \
+    t3dVec.v[1] op vec.y;                  \
+    t3dVec.v[2] op vec.z;
 
 void Game_init()
 {
@@ -72,18 +55,43 @@ void Game_init()
     modelBall = t3d_model_load("rom:/ballguys/ball.t3dm");
     modelDisc = t3d_model_load("rom:/ballguys/disc.t3dm");
 
-    DrawObj *box1 = DrawObj_new(modelBox);
-    DrawObj *box2 = DrawObj_new(modelBox);
+    for (size_t i = 0; i < MAXPLAYERS; i++)
+    {
+        DrawObj *box = DrawObj_new(modelBox);
+        // first argument is object id
+        // this is used to relate the physics object to the draw object
+        PhysObj_new(box->id, 1.0f, 2.0f, (Vec3d){200.0f, 10.0f, 10.0f});
+        Player_init(&players[i], i, box->id);
+    }
     DrawObj *disc = DrawObj_new(modelDisc);
-    // first argument is object id
-    // this is used to relate the physics object to the draw object
-    PhysObj_new(box1->id, 1.0f, 2.0f, (Vec3d){200.0f, 10.0f, 10.0f});
-    PhysObj_new(box2->id, 1.0f, 2.0f, (Vec3d){0.0f, 10.0f, 10.0f});
+
+    // iterate players
+    for (size_t i = 0; i < MAXPLAYERS; i++)
+    {
+        // get player physics object
+        PhysBody *playerPhysObj = PhysObj_get(players[i].objID);
+        switch (i)
+        {
+        case 0:
+            playerPhysObj->position = (Vec3d){200.0f, 10.0f, 10.0f};
+            break;
+        case 1:
+            playerPhysObj->position = (Vec3d){0.0f, 10.0f, 10.0f};
+            break;
+        case 2:
+            playerPhysObj->position = (Vec3d){0.0f, 10.0f, 200.0f};
+            break;
+        case 3:
+            playerPhysObj->position = (Vec3d){200.0f, 10.0f, 200.0f};
+            break;
+        }
+    }
 }
 
 void Game_updatePhysObjs(
     float dt)
 {
+
     // first integrate motion for all objects
     // then copy the new positions to the draw objects
     PhysBodyArray *physBodies = PhysObj_getAll();
@@ -100,44 +108,35 @@ void Game_updatePhysObjs(
         // get the draw object associated with this physics object
         drawObj = DrawObj_get(physBody->id);
         // copy the new position to the draw object
-        Game_copyT3DVec3FromVec3d(&drawObj->position, &physBody->position);
+        T3DVec3ApplyVec3d(drawObj->position, physBody->position, =);
     }
 }
 void Game_updatePlayer(Player *player, float deltaTime, joypad_port_t port, bool is_human)
 {
-    if (is_human && player_has_control(player))
+    if (is_human)
     {
-        joypad_buttons_t btn = joypad_get_buttons_pressed(port);
-
-        if (btn.start)
-            minigame_end();
-
-        // Player Attack
-        if ((btn.a || btn.b) && !player->charging)
-        {
-            player->charging = true;
-            player->chargePower = 0;
-        }
-        if (player->charging)
-        {
-            player->chargePower += 1;
-            if (player->chargePower > 100)
-            {
-                player->chargePower = 100;
-            }
-        }
-
-        if (!(btn.a || btn.b))
-        {
-            // launch
-        }
+        Player_updateInput(
+            player,
+            deltaTime,
+            port);
     }
+
+    // get physics object
+    PhysBody *physBody = PhysObj_getByID(player->objID);
+    // move object
+    Vec3d translation = {player->input.x * MOVE_SPEED * deltaTime, 0.0f, player->input.z * MOVE_SPEED * deltaTime};
+    PhysBody_translateWithoutForce(
+        physBody,
+        &translation);
 }
 
+static int frame = 0;
 void Game_fixedUpdate(
     float deltaTime // in seconds
 )
 {
+    frame++;
+    debugf("----\nframe %d\n", frame);
 
     uint32_t playercount = core_get_playercount();
     for (size_t i = 0; i < MAXPLAYERS; i++)
@@ -147,19 +146,28 @@ void Game_fixedUpdate(
 
     Game_updatePhysObjs(deltaTime);
 
+    // iterate player draw objects
+    for (size_t i = 0; i < MAXPLAYERS; i++)
+    {
+        DrawObj *drawObj = DrawObj_get(players[i].objID);
+        // update the draw object's transform
+        DrawObj_updateTransform(players[i].objID);
+
+        {
+            // rotate
+            drawObj->rotation.v[i % 3] += 0.1f;
+
+            // add local offset
+            T3DVec3ApplyVec3d(drawObj->position, players[i].localOffset, +=);
+        }
+    }
+
     size_t numDrawObjs = DrawObj_getAll()->length;
     DrawObj *drawObj;
     for (size_t i = 0; i < numDrawObjs; i++)
     {
         drawObj = DrawObj_get(i);
         debugf("drawObj %d pos %f %f %f\n", drawObj->id, drawObj->position.v[0], drawObj->position.v[1], drawObj->position.v[2]);
-
-        // rotate
-        if (drawObj->id == 0 || drawObj->id == 1)
-        {
-            //
-            drawObj->rotation.v[0] += 0.1f;
-        }
     }
 }
 

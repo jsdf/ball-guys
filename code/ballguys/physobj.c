@@ -36,6 +36,20 @@ inline PhysBody *PhysObj_get(int index)
     return PhysBodyArray_at(&physBodies, index);
 }
 
+PhysBody *PhysObj_getByID(int id)
+{
+    PhysBody *body;
+    size_t i;
+    jsdf_array_foreach_ptr(&physBodies, body, i)
+    {
+        if (body->id == id)
+        {
+            return body;
+        }
+    }
+    return NULL;
+}
+
 void PhysObj_cleanupSystem()
 {
     PhysBodyArray_free(&physBodies);

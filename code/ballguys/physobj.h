@@ -20,5 +20,6 @@ void PhysObj_cleanupSystem();
 
 PhysBodyArray *PhysObj_getAll();
 PhysBody *PhysObj_get(int index);
+PhysBody *PhysObj_getByID(int id);
 
 #endif // PHYSOBJ_H
