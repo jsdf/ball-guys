@@ -24,7 +24,8 @@ Player players[MAXPLAYERS];
 
 PlyNum winner;
 
-#define MOVE_SPEED 10.0f
+#define MOVE_SPEED 1000.0f
+
 #define T3DVec3ApplyVec3d(t3dVec, vec, op) \
     t3dVec.v[0] op vec.x;                  \
     t3dVec.v[1] op vec.y;                  \
@@ -57,10 +58,10 @@ void Game_init()
 
     for (size_t i = 0; i < MAXPLAYERS; i++)
     {
-        DrawObj *box = DrawObj_new(modelBox);
+        DrawObj *box = DrawObj_new(modelBall);
         // first argument is object id
         // this is used to relate the physics object to the draw object
-        PhysObj_new(box->id, 1.0f, 2.0f, (Vec3d){200.0f, 10.0f, 10.0f});
+        PhysObj_new(box->id, 100.0f, 60.0f, (Vec3d){0.0f, 0.0f, 0.0f});
         Player_init(&players[i], i, box->id);
     }
     DrawObj *disc = DrawObj_new(modelDisc);

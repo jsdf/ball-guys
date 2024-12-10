@@ -56,7 +56,7 @@ void Player_updateInput(Player *player, float deltaTime, joypad_port_t port)
             inputs.stick_x / 127.0f * 2.0f, -1.0f, 1.0f);
     player->input.z =
         CLAMP(
-            inputs.stick_y / 127.0f * 2.0f, -1.0f, 1.0f);
+            -inputs.stick_y / 127.0f * 2.0f, -1.0f, 1.0f);
 
     Vec3d_normalise(&player->input);
 

@@ -13,7 +13,7 @@
 #define PHYSICS_MOTION_DAMPENING 0
 #define PHYSICS_USE_VERLET_INTEGRATION 0
 #define PHYS_MAX_COLLISION_ITERATIONS 10
-#define PHYS_DEBUG_PRINT_COLLISIONS 1
+#define PHYS_DEBUG_PRINT_COLLISIONS 0
 
 #define PHYS_BASE_VISCOSITY 0.05f
 
@@ -87,8 +87,8 @@ int PhysBehavior_worldCollisionResponseStep(PhysBody *body,
         return FALSE;
     }
 
-#ifdef PHYS_DEBUG_PRINT_COLLISIONS
-    debugf("body %d collided\n", body->id);
+#if PHYS_DEBUG_PRINT_COLLISIONS
+    debugf("body %d collided with world\n", body->id);
 #endif
     // response is to move away by penetration distance
     response = collision.normal;
@@ -242,7 +242,7 @@ void PhysBehavior_collisionResponse(PhysWorldData *world,
             break;
         }
     }
-#ifdef PHYS_DEBUG
+#if PHYS_DEBUG
     if (i > 0)
     {
         debugf("collision response took %d iters\n", i);

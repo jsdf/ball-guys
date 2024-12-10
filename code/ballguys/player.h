@@ -1,6 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <libdragon.h>
 #include "vec3d.h"
 
 #include "../../minigame.h"
