@@ -4,8 +4,29 @@
 #include <joypad.h>
 
 #include "macros.h"
+#include "vec3d.h"
+#include "physobj.h"
 
 #define DEAD_ZONE 0.1f
+
+jsdf_array_funcs(Player, malloc, free);
+
+PlayerArray players;
+
+void Player_initSystem()
+{
+    PlayerArray_reserve(&players, MAXPLAYERS);
+}
+
+Player *Player_getPlayer(PlyNum plynum)
+{
+    return PlayerArray_at(&players, plynum);
+}
+
+PlayerArray *Player_getAll()
+{
+    return &players;
+}
 
 void Player_init(Player *player, PlyNum plynum, uint32_t objID)
 {
@@ -15,6 +36,12 @@ void Player_init(Player *player, PlyNum plynum, uint32_t objID)
     player->chargePower = 0;
     player->input = (Vec3d){0.0f, 0.0f, 0.0f};
     player->localOffset = (Vec3d){0.0f, 0.0f, 0.0f};
+}
+
+void Player_getPosition(Player *player, Vec3d *position)
+{
+    PhysBody *physBody = PhysObj_getByID(player->objID);
+    Vec3d_copyFrom(position, &physBody->position);
 }
 
 void Player_updateInput(Player *player, float deltaTime, joypad_port_t port)

@@ -6,7 +6,9 @@
                 "${workspaceFolder}/**",
                 "/n64_toolchain//mips64-elf/include/"
             ],
-            "defines": [],
+            "defines": [
+                "N64"
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",

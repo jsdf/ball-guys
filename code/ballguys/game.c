@@ -6,6 +6,7 @@
 #include "physobj.h"
 #include "player.h"
 #include "vec3d.h"
+#include "camera.h"
 #include "../../minigame.h"
 #include "../../core.h"
 
@@ -19,8 +20,7 @@ PhysWorldData worldData = {
 };
 PhysState physics;
 Game game;
-
-Player players[MAXPLAYERS];
+Camera camera;
 
 PlyNum winner;
 
@@ -56,21 +56,20 @@ void Game_init()
     modelBall = t3d_model_load("rom:/ballguys/ball.t3dm");
     modelDisc = t3d_model_load("rom:/ballguys/disc.t3dm");
 
-    for (size_t i = 0; i < MAXPLAYERS; i++)
-    {
-        DrawObj *box = DrawObj_new(modelBall);
-        // first argument is object id
-        // this is used to relate the physics object to the draw object
-        PhysObj_new(box->id, 100.0f, 60.0f, (Vec3d){0.0f, 0.0f, 0.0f});
-        Player_init(&players[i], i, box->id);
-    }
-    DrawObj *disc = DrawObj_new(modelDisc);
+    Player_initSystem();
 
-    // iterate players
     for (size_t i = 0; i < MAXPLAYERS; i++)
     {
-        // get player physics object
-        PhysBody *playerPhysObj = PhysObj_get(players[i].objID);
+        // create a draw object for the player, and an id
+        DrawObj *playerModel = DrawObj_new(modelBall);
+
+        // init player
+        Player *player = Player_getPlayer(i);
+        Player_init(player, i, playerModel->id);
+
+        // create a physics object for the player
+        PhysBody *playerPhysObj = PhysObj_new(playerModel->id, 100.0f, 60.0f, (Vec3d){0.0f, 0.0f, 0.0f});
+
         switch (i)
         {
         case 0:
@@ -87,6 +86,7 @@ void Game_init()
             break;
         }
     }
+    DrawObj *disc = DrawObj_new(modelDisc);
 }
 
 void Game_updatePhysObjs(
@@ -139,10 +139,12 @@ void Game_fixedUpdate(
     frame++;
     debugf("----\nframe %d\n", frame);
 
+    PlayerArray *players = Player_getAll();
+
     uint32_t playercount = core_get_playercount();
     for (size_t i = 0; i < MAXPLAYERS; i++)
     {
-        Game_updatePlayer(&players[i], deltaTime, core_get_playercontroller(i), i < playercount);
+        Game_updatePlayer(&players->data[i], deltaTime, core_get_playercontroller(i), i < playercount);
     }
 
     Game_updatePhysObjs(deltaTime);
@@ -150,16 +152,16 @@ void Game_fixedUpdate(
     // iterate player draw objects
     for (size_t i = 0; i < MAXPLAYERS; i++)
     {
-        DrawObj *drawObj = DrawObj_get(players[i].objID);
+        DrawObj *drawObj = DrawObj_get(players->data[i].objID);
         // update the draw object's transform
-        DrawObj_updateTransform(players[i].objID);
+        DrawObj_updateTransform(players->data[i].objID);
 
         {
             // rotate
             drawObj->rotation.v[i % 3] += 0.1f;
 
             // add local offset
-            T3DVec3ApplyVec3d(drawObj->position, players[i].localOffset, +=);
+            T3DVec3ApplyVec3d(drawObj->position, players->data[i].localOffset, +=);
         }
     }
 
